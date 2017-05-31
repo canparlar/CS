@@ -1,2 +1,2 @@
 # CS
-hello
+This repository is dedicated for my random codes. 
