@@ -1,25 +1,26 @@
 import math
 
-a = [1]
-s = ['A', 'B', 'C']
-b = 1
-c = input()
-y = 0
+disks = [1]
+rods = ['A', 'B', 'C']
+initial = 1
+usr = input()
+arry = [0] * c
 
-for n in range(1, c):
-    a.extend(a)
-    a.insert((2**n)-1, b+1)
-    b+=1
+for n in range(1, usr):
+    disks.extend(a)
+    disks.insert((2**n)-1, initial+1)
+    initial+=1
 
-#print(a)
+#print(disks)
 
-if c%2 == 0:
-    for x in range(0,len(a)):
-        if a[x]%2==0:
-            if y+1==3:
-                y=0
-                print a[x],"goes from",s[y] ,"to",s[y+1]
+if usr%2 == 0:
+    for x in range(0,len(disks)):
+        if disks[x]%2==0:
+
+            if arry[disks[x]]+2==3:
+
+            print disks[x],"goes from",rods[arry[disks[x]]+1] ,"to",rods[arry[disks[x]]+2]
+        else:
+
+            print disks[x],"goes from",rods[] ,"to",rods[]
 else:
-    for x in range(0,len(a)):
-        if a[x]%2==0:
-            print a[x],"goes from",s[y] ,"to",s[z]
