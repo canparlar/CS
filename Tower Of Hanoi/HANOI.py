@@ -18,9 +18,10 @@ if usr%2 == 0:
         if disks[x]%2==0:
 
             if arry[disks[x]]+2==3:
-
+                #buraya eger 3 u asarsa geri indiricek birsey lazim
             print disks[x],"goes from",rods[arry[disks[x]]+1] ,"to",rods[arry[disks[x]]+2]
         else:
-
+            #eger disk numarasi tek ise tam tersini yapicak
             print disks[x],"goes from",rods[] ,"to",rods[]
 else:
+#ayni kod sadece siralar farkli
