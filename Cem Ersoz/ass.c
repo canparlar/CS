@@ -1,29 +1,31 @@
-#include <stdio.h>
-#include <string.h>
+//This code splits a string by a splitting word and translates written numbers to numbers.
 
-char sfirst[60];
-char ssecond[60];
+#include <stdio.h> //@cemersoz included standart library
+#include <string.h> //included string library
+
+char sfirst[60]; //first word (number)
+char ssecond[60]; //second word (number)
 
 int split (char sinput[40], char ssplitter[40]) {
 
-  char *search;
-  search = strstr(sinput, ssplitter);
+  char *search; //created a pointer to search
+  search = strstr(sinput, ssplitter); //searches for the splitting word
 
-  if (search != NULL) {
+  if (search != NULL) { //if the splitter is present in the sentence
 
-      strncpy(sfirst, sinput, (search-sinput));
-      strncpy(ssecond, sinput+(search-sinput)+strlen(ssplitter)+1, strlen(sinput));
+      strncpy(sfirst, sinput, (search-sinput)); //splits the first word to sfirst
+      strncpy(ssecond, sinput+(search-sinput)+strlen(ssplitter)+1, strlen(sinput)); //splits the second word to ssecond
 
       return 1;
   }
 
-  else {
+  else { //if the splitter is not present in the sentence
       printf("No Splitter in Input\n");
       return 0;
   }
 }
 
-int list () {
+int list () { //lists the strings
 
     char *ptr;
 
@@ -35,7 +37,7 @@ int list () {
     return 1;
 }
 
-int translate () {
+int translate () { //translates words to numbers
 
 
 
@@ -43,22 +45,22 @@ int translate () {
 
  int main () {
 
-	 char sinput[100];
-   char ssplitter[100];
+	 char sinput[100]; //input sentence
+   char ssplitter[100]; //splitting word
 
 	 printf("Input:");
-	 fgets(sinput, sizeof(sinput), stdin);
+	 fgets(sinput, sizeof(sinput), stdin); //gets the input sentence
 	 sinput[strlen(sinput)-1] = '\0';
 
    printf("Splitter:");
-   fgets(ssplitter, sizeof(ssplitter), stdin);
+   fgets(ssplitter, sizeof(ssplitter), stdin); //gets the splitting word
    ssplitter[strlen(ssplitter)-1] = '\0';
 
-	 split(sinput, ssplitter);
+	 split(sinput, ssplitter); //splits
 
-   list();
+   list(); //lists
 
-   translate();
+   translate(); //translates
 
    printf("First:%s\nSecond:%s\n",sfirst,ssecond);
 
