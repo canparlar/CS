@@ -1,0 +1,10 @@
+Can Parlar
+
+1. The declaration of arr[num] needs to be after scanning num from the user.
+
+2.It happenes when the program tries to write or read a empty or non-existing memory location.
+
+3. Structs group various variables with mixed data types. But enums are just a group of symbolic constants which are symbols to various variables.
+
+4.I think yes i would use a typedef enum then use it inside a struct.
+
