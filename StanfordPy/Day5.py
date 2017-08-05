@@ -15,20 +15,16 @@ import time
 import threading
 import Tkinter as tk
 import Queue
-from HamsterAPI.comm_ble import RobotComm	# no dongle
-#from HamsterAPI.comm_usb import RobotComm	# yes dongle
+from HamsterAPI.comm_ble import RobotComm	
 
 class Event(object):
     def __init__(self, event_type, event_data):
         self.type = event_type #string
         self.data = event_data #list of number or character depending on type
 
-##############################
-# Finite state machine engine
-##############################
 class StateMachine(object):
 	def __init__(self, name, eventQ_handle):
-		self.name = name		# machine name
+		self.name = name	# machine name
 		self.states = []	# list of lists, [[state name, event, transition, next_state],...]
 		self.start_state = None
 		self.end_states = []	# list of name strings
@@ -58,6 +54,7 @@ class StateMachine(object):
 			#print "current state", current_state
 			if current_state in self.end_states:
 				break
+			#print "run", self.q.qsize()
 			if not self.q.empty():
 				e = self.q.get()
 				for c in self.states:
@@ -66,6 +63,7 @@ class StateMachine(object):
 						#print('Transition = %s to %s' % (c[0], c[3]))
 						c[2]()	# invoke callback function
 						current_state = c[3] 	# next state
+						print "FOUND MATCHING: ", c[0], e.type
 						break	# get out of inner for-loop
 		return
 
@@ -83,41 +81,151 @@ class RobotBehavior(object):
 
 	def spawn_threads(self):
 		###########################################################
-		# 1. create a watcher thread that reads sensors and registers events: obstacle on left, right or no obstacle. This
+		# 1. DONE create a watcher thread that reads sensors and registers events: obstacle on left, right or no obstacle. This
 		# 	thread runs the method event_watcher() you are to implement below.
-		# 2. populate FSM(StateMachine) with avoidance states, set start state and create a thread to run the machine
+		# 2.DONE populate FSM(StateMachine) with avoidance states, set start state and create a thread to run the machine
 		###########################################################	
-		pass
+		event_watcher = threading.Thread(name='event_watcher',target=self.event_watcher, args=(self.q,))
+
+		event_watcher.daemon = True
+
+		event_watcher.start()
+
+		sm = StateMachine('Parking Ticket FSM', self.q)
+
+		self.event_watcher = event_watcher
+
+		#machine = threading.Thread(name='state machine',target=StateMachine.run, args=('Parking Ticket FSM', self.q))	
+
+		sm.add_state('NoObs', 'clear', self.go_forward, 'NoObs')
+		sm.add_state('NoObs', 'robs', self.go_right, 'Go')
+		sm.add_state('NoObs', 'lobs', self.go_left, 'Go')
+		sm.add_state('NoObs', 'border', self.go_turn, 'Border')
+		sm.add_state('NoObs', 'obs', self.go_toward, 'Go')
+
+		sm.add_state('Go', 'obs', self.go_toward, 'Go')
+		sm.add_state('Go', 'border', self.go_turn, 'Border')
+		sm.add_state('Go', 'clear', self.go_forward, 'NoObs')
+
+		sm.add_state('Border', 'noborder', self.go_forward, 'NoObs')
+		sm.add_state('Border', 'border', self.go_turn, 'Border')
+
+		sm.set_start_state('NoObs')
+
+		t = threading.Thread(name='FSM', target=sm.run)
+		t.daemon = True
+		t.start()
+
+		
 
 	def event_watcher(self, q):
 		just_turned_on = True
 
+		print "starting the event watcher thread"
+
 		while not self.done:
 			if gRobotList and self.go:
+				#print "in loop"
 				self.robot = gRobotList[0]
 				if just_turned_on:
 					#time.sleep(1)
 					just_turned_on = False #the first time the robot connect, sensor data is unavailable the first second or so
 				###########################################################
-				# Implement event producer here. The events are obstacle on left, right or no obstacle. Design your
+				# DONEImplement event producer here. The events are obstacle on left, right or no obstacle. Design your
 				# logic for what event gets created based on sensor readings.
+
+				prox_l = self.robot.get_proximity(0)
+
+				prox_r = self.robot.get_proximity(1)
+
+				line_l = self.robot.get_floor(0)
+
+				line_r = self.robot.get_floor(1)
+
+				#print prox_l, prox_r
+
+				i = 10
+				#r - i < left < r+i
+				#either is true
+				#l - i < right < l+i
+				#BUT - this procs with low ratings like 9 and 4 (nothing in front) as well as huge ratings (70 and 75) when these signify totally different things
+				if (line_l < 20 or line_r < 20):
+					# print "BORDER BORDER BORDER"
+					border = Event("border", [line_l, line_r])
+					q.put(border)
+				else:
+					# print "NOBORDER NOBORDER NOBORDER"
+					noborder = Event("noborder", [line_l, line_r])
+					q.put(noborder)
+
+					if prox_l > 20 and prox_r>20:
+						if (prox_l < prox_r+i and prox_l > prox_r-i) or (prox_r < prox_l+i and prox_r > prox_l-i):
+							obs = Event("obs", [prox_l, prox_r])
+							print "OBS IN FRONT"
+							q.put(obs)
+
+						elif prox_l > prox_r:
+						# print "LEFT OBS"
+							lobs = Event("lobs", [prox_l, prox_r])
+							q.put(lobs)
+						elif prox_r > prox_l:
+						# print"RIGHT OBS"
+							robs = Event("robs", [prox_l, prox_r])
+							q.put(robs)
+
+
+					#print "obstacle detected, q1: %d %d" % (prox_l, prox_r)
+					
+					else:
+					# print"CLEAR CLEAR CLEAR"
+						clear = Event("clear", [prox_l, prox_r])
+						q.put(clear)
+				#print "event watcher: ", q.qsize()
+
 				###########################################################
 				time.sleep(0.01)
 			# else:
 			# 	print "waiting for robot in watcher"
-	        return
+		return
 
 	#######################################
-	# Implement Hamster movements to avoid obstacle
+	# DONE Implement Hamster movements to avoid obstacle
 	#######################################
-	def turning_left(self):
-		pass
+	def go_left(self):
+		#print "OBS @ LEFT going LEFT"
+		a = self.q.get()
+		self.robot = gRobotList[0]
+		self.robot.set_wheel(0, -100)
+		self.robot.set_wheel(1, 100)
 
-	def turning_right(self):
-		pass
+	def go_right(self):
+		#print "OBS @ RIGHT going RIGHT"
+		a = self.q.get()
+		self.robot = gRobotList[0]
+		self.robot.set_wheel(0, 100)
+		self.robot.set_wheel(1, -100)
 
-	def moving_forward(self):
-		pass
+	def go_forward(self):
+		# print "NOTHING Randomly Going Forward"
+		self.robot = gRobotList[0]
+		self.robot.set_wheel(0, 100)
+		self.robot.set_wheel(1, 100)
+
+	def go_toward(self):
+		# print "TRASH I'm Going Towards"
+		self.robot = gRobotList[0]
+		self.robot.set_wheel(0, 100)
+		self.robot.set_wheel(1, 100)
+
+	def go_turn(self):
+		# print "BORDER I'm Turning"
+		self.robot = gRobotList[0]
+		self.robot.set_wheel(0, -30)
+		self.robot.set_wheel(1, 30)
+		time.sleep(0.5)
+		self.q.queue.clear()
+		# self.que
+		
 		  
 class GUI(object):
 	def __init__(self, root, robot_control):

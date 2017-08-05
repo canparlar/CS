@@ -31,7 +31,7 @@ class RobotBehaviorThread(threading.Thread):
 
 	def run(self):
 		robot=None
-		i = 25
+		i = 10
 		d = 2
 		while not self.done:
 			if self.robotList:
